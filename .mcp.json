@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "windows-power": {
+      "command": "windows-power-mcp"
+    }
+  }
+}

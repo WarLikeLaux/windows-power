@@ -1,0 +1,37 @@
+{
+  "name": "windows-power",
+  "version": "0.1.0+codex.20260913220640",
+  "description": "Schedule and manage Windows shutdowns from Codex running in WSL.",
+  "author": {
+    "name": "WarLikeLaux",
+    "url": "https://github.com/WarLikeLaux"
+  },
+  "homepage": "https://github.com/WarLikeLaux/windows-power",
+  "repository": "https://github.com/WarLikeLaux/windows-power",
+  "license": "MIT",
+  "keywords": [
+    "windows",
+    "shutdown",
+    "wsl",
+    "mcp",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Windows Power",
+    "shortDescription": "Schedule Windows shutdowns safely from Codex.",
+    "longDescription": "Manage a persistent Windows shutdown schedule from Codex in WSL: schedule, inspect, postpone, cancel, or explicitly shut down now.",
+    "developerName": "WarLikeLaux",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Shut down Windows in two hours.",
+      "How long until Windows shuts down?",
+      "Postpone the Windows shutdown by 30 minutes."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
