@@ -5,8 +5,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { WindowsPower } from './windowsPower.js';
+import { NightShutdown } from './nightShutdown.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const MAX_DELAY_MINUTES = 365 * 24 * 60;
 const power = new WindowsPower();
 
@@ -46,16 +47,38 @@ function resolveEpoch(afterMinutes?: number, at?: string): number {
 
 export function createServer(windowsPower: WindowsPower = power): McpServer {
     const server = new McpServer({ name: 'windows-power', version: VERSION });
+    const night = new NightShutdown(windowsPower);
 
     server.registerTool('get_shutdown_status', {
-        description: 'Read the active Windows shutdown schedule and exact remaining time.',
+        description: 'Read the Windows shutdown time, night window and latest HAPI check, including sessions that are still blocking shutdown.',
         inputSchema: {}
     }, async () => {
         try {
-            return toolResult(await windowsPower.status());
+            return toolResult(await night.status());
         } catch (error) {
             return errorResult(error);
         }
+    });
+
+    server.registerTool('schedule_night_shutdown', {
+        description: 'Set Windows volume to 0%, then shut down after HAPI agents on this computer finish, with an independent forced deadline. Checks every 15 minutes by default. Replaces the existing managed schedule.',
+        inputSchema: {
+            after: z.string().describe('Earliest shutdown time, RFC 3339 with timezone offset.'),
+            deadline: z.string().describe('Forced shutdown deadline, RFC 3339 with timezone offset.'),
+            checkEveryMinutes: z.number().int().min(1).max(60).default(15).describe('HAPI polling interval in minutes.'),
+            wakeComputer: z.boolean().default(true).describe('Wake Windows to check HAPI and enforce the deadline.')
+        }
+    }, async (options) => {
+        try { return toolResult(await night.schedule(options)); }
+        catch (error) { return errorResult(error); }
+    });
+
+    server.registerTool('mute_audio', {
+        description: 'Set all default Windows audio output roles to 0% and verify the volume.',
+        inputSchema: {}
+    }, async () => {
+        try { return toolResult(await windowsPower.muteAudio()); }
+        catch (error) { return errorResult(error); }
     });
 
     server.registerTool('schedule_shutdown', {
@@ -119,6 +142,34 @@ export function createServer(windowsPower: WindowsPower = power): McpServer {
 }
 
 async function main(): Promise<void> {
+    const [command, ...args] = process.argv.slice(2);
+    if (command) {
+        const night = new NightShutdown(power);
+        let result: unknown;
+        if (command === 'night') {
+            const flags = z.object({ after: z.string(), deadline: z.string(), interval: z.coerce.number().int().min(1).max(60).optional() });
+            const values: Record<string, string> = {};
+            for (let i = 0; i < args.length; i += 2) {
+                const name = args[i];
+                if (!['--after', '--deadline', '--interval'].includes(name!) || !args[i + 1] || values[name!.slice(2)]) {
+                    throw new Error('Usage: windows-power-mcp night --after <RFC3339> --deadline <RFC3339> [--interval <minutes>]');
+                }
+                values[name!.slice(2)] = args[i + 1]!;
+            }
+            const options = flags.parse(values);
+            result = await night.schedule({ after: options.after, deadline: options.deadline, checkEveryMinutes: options.interval });
+        } else if (command === 'postpone') {
+            if (args.length !== 2 || args[0] !== '--minutes') throw new Error('Usage: windows-power-mcp postpone --minutes <signed minutes>');
+            const minutes = z.coerce.number().int().min(-MAX_DELAY_MINUTES).max(MAX_DELAY_MINUTES).refine(value => value !== 0).parse(args[1]);
+            result = await power.postpone(minutes);
+        } else if (args.length) throw new Error('This command accepts no arguments.');
+        else if (command === 'status') result = await night.status();
+        else if (command === 'cancel') result = await power.cancel();
+        else if (command === 'mute') result = await power.muteAudio();
+        else throw new Error('Commands: night, status, postpone, cancel, mute. Run without arguments for MCP stdio.');
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        return;
+    }
     const server = createServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);

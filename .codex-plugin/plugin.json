@@ -1,7 +1,7 @@
 {
   "name": "windows-power",
-  "version": "0.1.0+codex.20260913220640",
-  "description": "Schedule and manage Windows shutdowns from Codex running in WSL.",
+  "version": "0.2.0",
+  "description": "Schedule Windows shutdowns, wait for HAPI agents overnight and mute audio from WSL.",
   "author": {
     "name": "WarLikeLaux",
     "url": "https://github.com/WarLikeLaux"
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Windows Power",
-    "shortDescription": "Schedule Windows shutdowns safely from Codex.",
-    "longDescription": "Manage a persistent Windows shutdown schedule from Codex in WSL: schedule, inspect, postpone, cancel, or explicitly shut down now.",
+    "shortDescription": "Windows shutdown, HAPI night mode and audio.",
+    "longDescription": "Manage persistent Windows shutdown schedules from WSL, wait for HAPI work with a forced night deadline, and mute audio.",
     "developerName": "WarLikeLaux",
     "category": "Productivity",
     "capabilities": [
@@ -30,7 +30,7 @@
     "defaultPrompt": [
       "Shut down Windows in two hours.",
       "How long until Windows shuts down?",
-      "Postpone the Windows shutdown by 30 minutes."
+      "Выключи комп после 2, но не позже 5."
     ]
   },
   "mcpServers": "./.mcp.json"

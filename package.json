@@ -1,7 +1,7 @@
 {
   "name": "@warlikelaux/windows-power-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for scheduling and managing Windows shutdowns from WSL.",
+  "version": "0.2.0",
+  "description": "Windows shutdown schedules, HAPI-aware night shutdown and audio control from WSL.",
   "type": "module",
   "private": true,
   "bin": {
@@ -17,6 +17,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/server.js",
+    "pretest": "npm run build",
     "test": "vitest run"
   },
   "engines": {
